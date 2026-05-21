@@ -27,7 +27,8 @@ const config = {
       "@semantic-release/github",
       {
         "assets": [
-          { "path": "dist/*" }
+          { "path": "dist/*.whl", "label": "Python Wheel" },
+          { "path": "dist/*.tar.gz", "label": "Source Distribution" }
         ],
         "successComment": false,
         "failComment": false,
