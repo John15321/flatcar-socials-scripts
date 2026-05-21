@@ -1,3 +1,10 @@
+# 1.0.0 (2026-05-21)
+
+
+### Features
+
+* Add Flatcar Socials Scripts for scraping Discord statistics ([f489db2](https://github.com/John15321/flatcar-socials-scripts/commit/f489db232010e95f0ff97d4d7434b16c945d5356))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
