@@ -1,0 +1,105 @@
+[project]
+name = "flatcar-socials-scripts"
+version = "0.1.0"
+description = "Scripts for Flatcar Socials"
+authors = [
+    { name = "Jan Bronicki", email = "jan.bronicki.flatcar@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    # Add more here...
+]
+
+# Core dependencies
+dependencies = [
+    "click>=8.1",
+    "rich>=13.0",
+    "discord.py>=2.3",
+]
+
+[project.scripts]
+flatcar-socials = "flatcar_socials_scripts.cli:cli"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-cov", 
+    "pytest-mock",
+    "ruff",
+    "mypy",
+    "types-setuptools",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/janbronicki/flatcar-socials-scripts"
+Repository = "https://github.com/janbronicki/flatcar-socials-scripts"
+Issues = "https://github.com/janbronicki/flatcar-socials-scripts/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+fix = true
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = [
+    "--cov=flatcar_socials_scripts",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-branch",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "tests/*",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
