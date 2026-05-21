@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/John15321/flatcar-socials-scripts/compare/v1.0.0...v1.1.0) (2026-05-21)
+
+
+### Features
+
+* Update release configuration and enhance logging setup in CLI ([222aac6](https://github.com/John15321/flatcar-socials-scripts/commit/222aac689c4a80f477a16780f43254dd68b5b4b6))
+
 # 1.0.0 (2026-05-21)
 
 
