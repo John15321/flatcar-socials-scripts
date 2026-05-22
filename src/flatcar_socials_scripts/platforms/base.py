@@ -9,7 +9,7 @@ from datetime import datetime
 class UserStats:
     """Per-user statistics."""
 
-    user_id: int
+    user_id: int | str
     username: str
     display_name: str
     is_bot: bool
