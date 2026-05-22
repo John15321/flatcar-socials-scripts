@@ -22,7 +22,8 @@ CLI tool to scrape statistics from Flatcar social platforms and export them to C
 
 - 📊 Scrape server/channel stats from social platforms
 - 💬 **Discord**: member count, channels, messages per month, active users
-- 📁 CSV output (append-friendly for tracking over time)
+- � **Matrix**: room members, power levels, messages per month, per-user stats
+- �📁 CSV output (append-friendly for tracking over time)
 - 🎨 Rich terminal output with tables
 - 🔌 Modular platform design — easy to add new platforms
 
@@ -64,7 +65,8 @@ make setup
 
 1. **Python 3.12+** installed
 2. **[pipx](https://pipx.pypa.io/)** (recommended) or pip
-3. A **Discord bot token** — create one at the [Discord Developer Portal](https://discord.com/developers/applications)
+3. A **Discord bot token** — create one at the [Discord Developer Portal](https://discord.com/developers/applications) (for Discord scraping)
+4. A **Matrix access token** — generate one from your Matrix client (for Matrix scraping)
 
 ### Setting Up a Discord Bot
 
@@ -137,6 +139,62 @@ The tool outputs a CSV file (default: `discord_stats.csv`). Each run **appends**
 ```
 
 A Rich-formatted table is also printed to the terminal on each run.
+
+### Matrix
+
+Scrape statistics from a Matrix room:
+
+```bash
+# Option 1: Using environment variables (recommended)
+export MATRIX_HOMESERVER="https://matrix.org"
+export MATRIX_ACCESS_TOKEN="mat_your-access-token"
+export MATRIX_ROOM_ID="#flatcar:matrix.org"
+flatcar-socials matrix
+
+# Option 2: Using CLI options
+flatcar-socials matrix \
+  --homeserver https://matrix.org \
+  --token "mat_your-access-token" \
+  --room-id "#flatcar:matrix.org"
+
+# Custom time range and per-user stats
+flatcar-socials matrix --range last-6mo --user-stats matrix_users.csv
+
+# Specific date range
+flatcar-socials matrix --from 2025-01-01 --to 2025-06-01 -o matrix_stats.csv
+```
+
+#### Getting a Matrix Access Token
+
+1. Log into your Matrix account via [Element](https://app.element.io/) or another client
+2. Go to **Settings** → **Help & About** → **Advanced** → copy **Access Token**
+3. The homeserver is the part after `:` in your user ID (e.g. `matrix.org` from `@user:matrix.org`)
+
+#### Collected Matrix Stats
+
+| Metric | Description |
+|--------|-------------|
+| `total_members` | Total joined room members |
+| `admins` | Members with power level ≥ 100 |
+| `moderators` | Members with power level 50–99 |
+| `room_alias` | Canonical room alias |
+| `room_topic` | Room topic description |
+| `messages_YYYY-MM` | Message count per month in the time range |
+| `total_messages` | Total messages in the time range |
+| `active_users_in_range` | Unique users who posted (when `--user-stats` is used) |
+
+#### Per-User Stats (`--user-stats`)
+
+When `--user-stats <file.csv>` is provided, a separate CSV is written with one row per room member (including silent members with 0 messages):
+
+| Field | Description |
+|-------|-------------|
+| `user_id` | Matrix user ID (e.g. `@user:matrix.org`) |
+| `display_name` | Display name |
+| `message_count` | Messages sent in the time range |
+| `first_message_at` | Timestamp of first message |
+| `last_message_at` | Timestamp of last message |
+| `roles` | Power level (e.g. `power_level:100`) |
 
 ## 🛠️ Development
 

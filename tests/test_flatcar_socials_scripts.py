@@ -188,3 +188,16 @@ class TestCli:
         assert "--to" in result.output
         assert "--range" in result.output
         assert "--user-stats" in result.output
+
+    def test_matrix_help(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(cli, ["matrix", "--help"])
+        assert result.exit_code == 0
+        assert "--homeserver" in result.output
+        assert "--token" in result.output
+        assert "--room-id" in result.output
+        assert "--output" in result.output
+        assert "--from" in result.output
+        assert "--to" in result.output
+        assert "--range" in result.output
+        assert "--user-stats" in result.output
