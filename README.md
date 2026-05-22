@@ -28,22 +28,42 @@ CLI tool to scrape statistics from Flatcar social platforms and export them to C
 
 ## 📦 Installation
 
-```bash
-# From PyPI (when published)
-pip install flatcar-socials-scripts
+We recommend using [pipx](https://pipx.pypa.io/) to install the CLI — it handles virtual environments automatically so the tool is available globally without polluting your system Python.
 
-# For development
-git clone <repository-url>
+```bash
+# Using pipx (recommended)
+pipx install git+https://github.com/John15321/flatcar-socials-scripts.git
+
+# Or from a specific GitHub release
+pipx install https://github.com/John15321/flatcar-socials-scripts/releases/latest/download/flatcar_socials_scripts-1.0.0-py3-none-any.whl
+```
+
+<details>
+<summary>Alternative: install with pip</summary>
+
+```bash
+pip install git+https://github.com/John15321/flatcar-socials-scripts.git
+```
+
+</details>
+
+<details>
+<summary>Development setup</summary>
+
+```bash
+git clone https://github.com/John15321/flatcar-socials-scripts.git
 cd flatcar-socials-scripts
 make setup
 ```
+
+</details>
 
 ## 🚀 Usage
 
 ### Prerequisites
 
 1. **Python 3.12+** installed
-2. **uv** package manager (recommended) or pip
+2. **[pipx](https://pipx.pypa.io/)** (recommended) or pip
 3. A **Discord bot token** — create one at the [Discord Developer Portal](https://discord.com/developers/applications)
 
 ### Setting Up a Discord Bot
@@ -64,9 +84,7 @@ make setup
 
 ```bash
 # Install the tool
-pip install flatcar-socials-scripts
-# or with uv
-uv pip install flatcar-socials-scripts
+pipx install git+https://github.com/John15321/flatcar-socials-scripts.git
 
 # See all available commands
 flatcar-socials --help
