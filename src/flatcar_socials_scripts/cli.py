@@ -12,6 +12,7 @@ from rich.table import Table
 from .output import write_csv, write_user_stats_csv
 from .platforms.discord import DiscordScraper
 from .platforms.matrix import MatrixScraper
+from .platforms.slack import SlackScraper
 from .timerange import TimeRange, parse_time_range
 
 console = Console()
@@ -39,6 +40,9 @@ def _setup_logging(verbose: bool) -> None:
     )
     logging.getLogger("discord.http").setLevel(logging.WARNING)
     logging.getLogger("nio").setLevel(logging.WARNING if not verbose else logging.DEBUG)
+    logging.getLogger("slack_sdk").setLevel(
+        logging.WARNING if not verbose else logging.DEBUG
+    )
 
 
 @click.group()
@@ -290,6 +294,130 @@ async def _scrape_matrix(
 
     # Display results in a rich table
     table = Table(title=f"Matrix Stats \u2014 {stats.server_name}")
+    table.add_column("Metric", style="cyan", no_wrap=True)
+    table.add_column("Value", style="green", justify="right")
+
+    for key, value in stats.stats.items():
+        label = key.replace("_", " ").title()
+        table.add_row(label, str(value))
+
+    console.print(table)
+
+    # Write server stats CSV
+    csv_path = write_csv(stats, output_path)
+    console.print(f"\n[bold]CSV written to:[/bold] {csv_path}")
+
+    # Write per-user stats CSV if requested
+    if user_stats_path and stats.user_stats:
+        user_csv = write_user_stats_csv(
+            stats.user_stats, user_stats_path, stats.server_name
+        )
+        console.print(f"[bold]User stats CSV written to:[/bold] {user_csv}")
+        console.print(f"  [dim]{len(stats.user_stats)} users tracked[/dim]")
+
+
+@cli.command()
+@click.option(
+    "--token",
+    envvar="SLACK_TOKEN",
+    required=True,
+    help="Slack token — bot (xoxb-) or user (xoxp-) (or set SLACK_TOKEN env var).",
+)
+@click.option(
+    "--channel-id",
+    envvar="SLACK_CHANNEL_ID",
+    required=True,
+    help="Slack channel ID (or set SLACK_CHANNEL_ID env var).",
+)
+@click.option(
+    "-o",
+    "--output",
+    "output_path",
+    default="slack_stats.csv",
+    show_default=True,
+    help="Output CSV file path.",
+)
+@click.option(
+    "--from",
+    "from_date",
+    default=None,
+    help="Start date (YYYY-MM-DD).",
+)
+@click.option(
+    "--to",
+    "to_date",
+    default=None,
+    help="End date (YYYY-MM-DD). Defaults to now.",
+)
+@click.option(
+    "--range",
+    "shorthand",
+    default=None,
+    help="Time shorthand: last-30d, last-6mo, last-2y, last-month, last-year.",
+)
+@click.option(
+    "--user-stats",
+    "user_stats_path",
+    default=None,
+    help="Output per-user breakdown CSV. Omit to skip user stats.",
+)
+def slack(
+    token: str,
+    channel_id: str,
+    output_path: str,
+    from_date: str | None,
+    to_date: str | None,
+    shorthand: str | None,
+    user_stats_path: str | None,
+) -> None:
+    """Scrape statistics from a Slack channel."""
+    time_range = parse_time_range(from_date, to_date, shorthand)
+    collect_users = user_stats_path is not None
+    asyncio.run(
+        _scrape_slack(
+            token,
+            channel_id,
+            Path(output_path),
+            time_range,
+            collect_users,
+            Path(user_stats_path) if user_stats_path else None,
+        )
+    )
+
+
+async def _scrape_slack(
+    token: str,
+    channel_id: str,
+    output_path: Path,
+    time_range: TimeRange,
+    collect_users: bool,
+    user_stats_path: Path | None,
+) -> None:
+    logger.info("Starting Slack scrape for channel %s", channel_id)
+    scraper = SlackScraper(
+        token=token,
+        channel_id=channel_id,
+        time_range=time_range,
+        collect_user_stats=collect_users,
+    )
+
+    with console.status("[bold green]Connecting to Slack..."):
+        try:
+            stats = await scraper.scrape()
+        except Exception:
+            logger.exception("Failed to scrape Slack channel")
+            raise
+        finally:
+            await scraper.close()
+
+    logger.info(
+        "Scrape complete for '%s' — %d stats collected",
+        stats.server_name,
+        len(stats.stats),
+    )
+
+    # Display results in a rich table
+    table = Table(title=f"Slack Stats — {stats.server_name}")
     table.add_column("Metric", style="cyan", no_wrap=True)
     table.add_column("Value", style="green", justify="right")
 

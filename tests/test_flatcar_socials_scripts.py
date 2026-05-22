@@ -198,6 +198,18 @@ class TestCli:
         assert "--room-id" in result.output
         assert "--output" in result.output
         assert "--from" in result.output
+
+    def test_slack_help(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(cli, ["slack", "--help"])
+        assert result.exit_code == 0
+        assert "--token" in result.output
+        assert "--channel-id" in result.output
+        assert "--output" in result.output
+        assert "--from" in result.output
+        assert "--to" in result.output
+        assert "--range" in result.output
+        assert "--user-stats" in result.output
         assert "--to" in result.output
         assert "--range" in result.output
         assert "--user-stats" in result.output

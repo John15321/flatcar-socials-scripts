@@ -21,6 +21,7 @@ dependencies = [
     "rich>=13.0",
     "discord.py>=2.3",
     "matrix-nio>=0.24",
+    "slack-sdk>=3.27",
 ]
 
 [project.scripts]

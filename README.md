@@ -22,8 +22,7 @@ CLI tool to scrape statistics from Flatcar social platforms and export them to C
 
 - 📊 Scrape server/channel stats from social platforms
 - 💬 **Discord**: member count, channels, messages per month, active users
-- � **Matrix**: room members, power levels, messages per month, per-user stats
-- �📁 CSV output (append-friendly for tracking over time)
+- �hat  **Matrix**: room members, power levels, messages per month, per-user stats- 💼 **Slack**: channel members, messages per month, per-user stats- �📁 CSV output (append-friendly for tracking over time)
 - 🎨 Rich terminal output with tables
 - 🔌 Modular platform design — easy to add new platforms
 
@@ -67,6 +66,7 @@ make setup
 2. **[pipx](https://pipx.pypa.io/)** (recommended) or pip
 3. A **Discord bot token** — create one at the [Discord Developer Portal](https://discord.com/developers/applications) (for Discord scraping)
 4. A **Matrix access token** — generate one from your Matrix client (for Matrix scraping)
+5. A **Slack token** — bot (`xoxb-`) or user (`xoxp-`) token from [api.slack.com/apps](https://api.slack.com/apps) (for Slack scraping)
 
 ### Setting Up a Discord Bot
 
@@ -195,6 +195,84 @@ When `--user-stats <file.csv>` is provided, a separate CSV is written with one r
 | `first_message_at` | Timestamp of first message |
 | `last_message_at` | Timestamp of last message |
 | `roles` | Power level (e.g. `power_level:100`) |
+
+### Slack
+
+Scrape statistics from a specific Slack channel:
+
+```bash
+# Option 1: Using environment variables (recommended)
+export SLACK_TOKEN="xoxp-your-user-token"   # or xoxb- bot token
+export SLACK_CHANNEL_ID="C03GQ8B5XNJ"
+flatcar-socials slack
+
+# Option 2: Using CLI options
+flatcar-socials slack --token "xoxp-your-user-token" --channel-id "C03GQ8B5XNJ"
+
+# Custom time range and per-user stats
+flatcar-socials slack --range last-6mo --user-stats slack_users.csv
+
+# Specific date range
+flatcar-socials slack --from 2025-01-01 --to 2025-06-01 -o slack_stats.csv
+```
+
+#### Getting a Slack Token
+
+Both **user tokens** (`xoxp-`) and **bot tokens** (`xoxb-`) are supported. If you are not a workspace admin (e.g. on the CNCF/Kubernetes Slack), use a **user token**.
+
+**User token (recommended for community workspaces):**
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) → **Create New App** → **From scratch**
+2. Select the target workspace (e.g. Kubernetes)
+3. Go to **OAuth & Permissions** → add these **User Token Scopes**:
+   - `channels:history` — read messages from public channels
+   - `channels:read` — view basic channel info and member list
+   - `users:read` — view user profiles
+4. Click **Install to Workspace** (may require admin approval — the scopes are read-only)
+5. Copy the **User OAuth Token** (`xoxp-...`)
+
+**Bot token (if you are a workspace admin):**
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) → **Create New App** → **From scratch**
+2. Go to **OAuth & Permissions** → add these **Bot Token Scopes**:
+   - `channels:history` — read messages from public channels
+   - `channels:read` — view basic channel info
+   - `groups:history` — read messages from private channels (if needed)
+   - `groups:read` — view private channel info (if needed)
+   - `users:read` — view user profiles
+3. **Install App to Workspace** → copy the **Bot User OAuth Token** (`xoxb-...`)
+4. Invite the bot to your channel: `/invite @YourBotName` in the Slack channel
+
+**Getting the Channel ID:** right-click the channel name → **View channel details** → copy the ID at the bottom
+
+#### Collected Slack Stats
+
+| Metric | Description |
+|--------|-------------|
+| `total_members` | Total channel member count |
+| `channel_name` | Channel name |
+| `channel_topic` | Channel topic |
+| `channel_purpose` | Channel purpose/description |
+| `is_private` | Whether the channel is private |
+| `bot_count` | Number of bots (when `--user-stats` is used) |
+| `admin_count` | Number of workspace admins in channel |
+| `owner_count` | Number of workspace owners in channel |
+| `messages_YYYY-MM` | Message count per month in the time range |
+| `total_messages` | Total messages in the time range |
+| `active_users_in_range` | Unique users who posted (when `--user-stats` is used) |
+
+#### Per-User Stats (`--user-stats`)
+
+When `--user-stats <file.csv>` is provided, a separate CSV is written with one row per channel member (including silent members with 0 messages):
+
+| Field | Description |
+|-------|-------------|
+| `user_id` | Slack user ID (e.g. `U0123456789`) |
+| `display_name` | Display name or real name |
+| `message_count` | Messages sent in the time range |
+| `first_message_at` | Timestamp of first message |
+| `last_message_at` | Timestamp of last message |
+| `roles` | Workspace role (owner, admin, or member) |
 
 ## 🛠️ Development
 
