@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/John15321/flatcar-socials-scripts/compare/v1.1.0...v1.2.0) (2026-05-22)
+
+
+### Features
+
+* Add basic Matrix platform support for scraping statistics ([7f7376d](https://github.com/John15321/flatcar-socials-scripts/commit/7f7376d227c03b039aab4eecd49fd82b85ef6122))
+
 # [1.1.0](https://github.com/John15321/flatcar-socials-scripts/compare/v1.0.0...v1.1.0) (2026-05-21)
 
 
