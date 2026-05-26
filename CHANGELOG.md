@@ -1,3 +1,10 @@
+# [2.0.0](https://github.com/John15321/flatcar-socials-scripts/compare/v1.2.0...v2.0.0) (2026-05-26)
+
+
+### Bug Fixes
+
+* restructure commit-analyzer plugin configuration for clarity ([7d2833d](https://github.com/John15321/flatcar-socials-scripts/commit/7d2833dca95397363029bf42fee625e5494ae546))
+
 # [1.2.0](https://github.com/John15321/flatcar-socials-scripts/compare/v1.1.0...v1.2.0) (2026-05-22)
 
 
