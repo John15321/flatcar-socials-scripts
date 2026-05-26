@@ -1,6 +1,6 @@
 [project]
 name = "flatcar-socials-scripts"
-version = "2.0.0"
+version = "2.0.1"
 description = "Scripts for Flatcar Socials"
 authors = [
     { name = "Jan Bronicki", email = "jan.bronicki.flatcar@gmail.com" }

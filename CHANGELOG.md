@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/John15321/flatcar-socials-scripts/compare/v2.0.0...v2.0.1) (2026-05-26)
+
+
+### Bug Fixes
+
+* simplify CLI entrypoint handling ([d62578a](https://github.com/John15321/flatcar-socials-scripts/commit/d62578a9245b757bce0996071d5aa0ee01f2d3af))
+
 # [2.0.0](https://github.com/John15321/flatcar-socials-scripts/compare/v1.2.0...v2.0.0) (2026-05-26)
 
 
