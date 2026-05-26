@@ -57,14 +57,12 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           ./.wheel-test-env/bin/python -c "from flatcar_socials_scripts.cli import cli; print('Package imports successfully')"
-          ./.wheel-test-env/bin/python -m flatcar_socials_scripts.cli --version
           ./.wheel-test-env/bin/flatcar-socials --version
 
       - name: Verify installed package (Windows)
         if: runner.os == 'Windows'
         run: |
           ./.wheel-test-env/Scripts/python.exe -c "from flatcar_socials_scripts.cli import cli; print('Package imports successfully')"
-          ./.wheel-test-env/Scripts/python.exe -m flatcar_socials_scripts.cli --version
           $entrypoint = Get-ChildItem ./.wheel-test-env/Scripts/flatcar-socials* | Select-Object -First 1
           if (-not $entrypoint) {
             throw "Could not find installed flatcar-socials entrypoint"

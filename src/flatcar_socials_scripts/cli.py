@@ -401,12 +401,3 @@ async def _scrape_matrix(
         )
         console.print(f"[bold]User stats CSV written to:[/bold] {user_csv}")
         console.print(f"  [dim]{len(stats.user_stats)} users tracked[/dim]")
-
-
-def main() -> None:
-    """Entry point for the CLI."""
-    cli()
-
-
-if __name__ == "__main__":
-    main()
