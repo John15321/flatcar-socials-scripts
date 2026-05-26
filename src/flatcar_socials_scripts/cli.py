@@ -2,9 +2,10 @@
 
 import asyncio
 import logging
+from importlib.metadata import version
 from pathlib import Path
 
-import click
+import rich_click as click
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
@@ -12,10 +13,47 @@ from rich.table import Table
 from .output import write_csv, write_user_stats_csv
 from .platforms.discord import DiscordScraper
 from .platforms.matrix import MatrixScraper
-from .timerange import TimeRange, parse_time_range
+from .timerange import Granularity, TimeRange, parse_time_range
 
 console = Console()
 logger = logging.getLogger("flatcar_socials")
+
+# ── rich-click styling ──────────────────────────────────────────────
+click.rich_click.USE_RICH_MARKUP = True
+click.rich_click.GROUP_ARGUMENTS_OPTIONS = True
+click.rich_click.SHOW_ARGUMENTS = True
+click.rich_click.STYLE_ERRORS_SUGGESTION = "magenta italic"
+
+click.rich_click.OPTION_GROUPS = {
+    "flatcar-socials discord": [
+        {
+            "name": "Authentication",
+            "options": ["--token", "--guild-id"],
+        },
+        {
+            "name": "Time Range",
+            "options": ["--from", "--to", "--range", "--granularity"],
+        },
+        {
+            "name": "Output",
+            "options": ["--output", "--user-stats", "--append"],
+        },
+    ],
+    "flatcar-socials matrix": [
+        {
+            "name": "Authentication",
+            "options": ["--homeserver", "--token", "--room-id"],
+        },
+        {
+            "name": "Time Range",
+            "options": ["--from", "--to", "--range", "--granularity"],
+        },
+        {
+            "name": "Output",
+            "options": ["--output", "--user-stats", "--append"],
+        },
+    ],
+}
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -42,7 +80,10 @@ def _setup_logging(verbose: bool) -> None:
 
 
 @click.group()
-@click.version_option()
+@click.version_option(
+    version=version("flatcar-socials-scripts"),
+    prog_name="flatcar-socials",
+)
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose/debug logging.")
 def cli(verbose: bool) -> None:
     """Flatcar Socials Scripts — scrape stats from social platforms."""
@@ -95,6 +136,19 @@ def cli(verbose: bool) -> None:
     default=None,
     help="Output per-user breakdown CSV. Omit to skip user stats.",
 )
+@click.option(
+    "--granularity",
+    type=click.Choice(["daily", "weekly", "monthly", "yearly"], case_sensitive=False),
+    default="monthly",
+    show_default=True,
+    help="Time bucket granularity for message and join stats.",
+)
+@click.option(
+    "--append",
+    is_flag=True,
+    default=False,
+    help="Append to existing CSV instead of overwriting.",
+)
 def discord(
     token: str,
     guild_id: int,
@@ -103,9 +157,12 @@ def discord(
     to_date: str | None,
     shorthand: str | None,
     user_stats_path: str | None,
+    granularity: str,
+    append: bool,
 ) -> None:
     """Scrape statistics from a Discord server."""
     time_range = parse_time_range(from_date, to_date, shorthand)
+    gran = Granularity(granularity)
     collect_users = user_stats_path is not None
     asyncio.run(
         _scrape_discord(
@@ -115,6 +172,8 @@ def discord(
             time_range,
             collect_users,
             Path(user_stats_path) if user_stats_path else None,
+            gran,
+            append,
         )
     )
 
@@ -126,6 +185,8 @@ async def _scrape_discord(
     time_range: TimeRange,
     collect_users: bool,
     user_stats_path: Path | None,
+    granularity: Granularity,
+    append: bool = False,
 ) -> None:
 
     logger.info("Starting Discord scrape for guild %s", guild_id)
@@ -134,6 +195,7 @@ async def _scrape_discord(
         guild_id=guild_id,
         time_range=time_range,
         collect_user_stats=collect_users,
+        granularity=granularity,
     )
 
     with console.status("[bold green]Connecting to Discord..."):
@@ -163,13 +225,17 @@ async def _scrape_discord(
     console.print(table)
 
     # Write server stats CSV
-    csv_path = write_csv(stats, output_path)
+    csv_path = write_csv(stats, output_path, append=append)
     console.print(f"\n[bold]CSV written to:[/bold] {csv_path}")
 
     # Write per-user stats CSV if requested
     if user_stats_path and stats.user_stats:
         user_csv = write_user_stats_csv(
-            stats.user_stats, user_stats_path, stats.server_name
+            stats.user_stats,
+            user_stats_path,
+            stats.server_name,
+            messages_df=stats.messages_df,
+            granularity=granularity,
         )
         console.print(f"[bold]User stats CSV written to:[/bold] {user_csv}")
         console.print(f"  [dim]{len(stats.user_stats)} users tracked[/dim]")
@@ -229,6 +295,19 @@ async def _scrape_discord(
     default=None,
     help="Output per-user breakdown CSV. Omit to skip user stats.",
 )
+@click.option(
+    "--granularity",
+    type=click.Choice(["daily", "weekly", "monthly", "yearly"], case_sensitive=False),
+    default="monthly",
+    show_default=True,
+    help="Time bucket granularity for message stats.",
+)
+@click.option(
+    "--append",
+    is_flag=True,
+    default=False,
+    help="Append to existing CSV instead of overwriting.",
+)
 def matrix(
     homeserver: str,
     token: str,
@@ -238,9 +317,12 @@ def matrix(
     to_date: str | None,
     shorthand: str | None,
     user_stats_path: str | None,
+    granularity: str,
+    append: bool,
 ) -> None:
     """Scrape statistics from a Matrix room."""
     time_range = parse_time_range(from_date, to_date, shorthand)
+    gran = Granularity(granularity)
     collect_users = user_stats_path is not None
     asyncio.run(
         _scrape_matrix(
@@ -251,6 +333,8 @@ def matrix(
             time_range,
             collect_users,
             Path(user_stats_path) if user_stats_path else None,
+            gran,
+            append,
         )
     )
 
@@ -263,6 +347,8 @@ async def _scrape_matrix(
     time_range: TimeRange,
     collect_users: bool,
     user_stats_path: Path | None,
+    granularity: Granularity = Granularity.MONTHLY,
+    append: bool = False,
 ) -> None:
     logger.info("Starting Matrix scrape for room %s", room_id)
     scraper = MatrixScraper(
@@ -271,6 +357,7 @@ async def _scrape_matrix(
         room_id=room_id,
         time_range=time_range,
         collect_user_stats=collect_users,
+        granularity=granularity,
     )
 
     with console.status("[bold green]Connecting to Matrix..."):
@@ -300,13 +387,17 @@ async def _scrape_matrix(
     console.print(table)
 
     # Write server stats CSV
-    csv_path = write_csv(stats, output_path)
+    csv_path = write_csv(stats, output_path, append=append)
     console.print(f"\n[bold]CSV written to:[/bold] {csv_path}")
 
     # Write per-user stats CSV if requested
     if user_stats_path and stats.user_stats:
         user_csv = write_user_stats_csv(
-            stats.user_stats, user_stats_path, stats.server_name
+            stats.user_stats,
+            user_stats_path,
+            stats.server_name,
+            messages_df=stats.messages_df,
+            granularity=granularity,
         )
         console.print(f"[bold]User stats CSV written to:[/bold] {user_csv}")
         console.print(f"  [dim]{len(stats.user_stats)} users tracked[/dim]")

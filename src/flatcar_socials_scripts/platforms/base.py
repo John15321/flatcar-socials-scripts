@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 
+import polars as pl
+
 
 @dataclass
 class UserStats:
@@ -32,6 +34,7 @@ class PlatformStats:
     scraped_at: datetime = field(default_factory=datetime.now)
     stats: dict[str, str | int | float] = field(default_factory=dict)
     user_stats: list[UserStats] = field(default_factory=list)
+    messages_df: pl.DataFrame | None = None
 
     def as_flat_dict(self) -> dict[str, str | int | float]:
         """Return all stats as a flat dict suitable for CSV output."""

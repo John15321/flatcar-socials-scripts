@@ -4,9 +4,31 @@ Supports absolute dates (YYYY-MM-DD) and shorthand expressions like:
   last-month, last-year, last-30d, last-6mo, last-2y
 """
 
+import enum
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+
+
+class Granularity(enum.Enum):
+    """Time bucket granularity for analytics."""
+
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+    YEARLY = "yearly"
+
+    def bucket_key(self, dt: datetime) -> str:
+        """Return the bucket key string for the given datetime."""
+        if self is Granularity.DAILY:
+            return dt.strftime("%Y-%m-%d")
+        if self is Granularity.WEEKLY:
+            iso = dt.isocalendar()
+            return f"{iso[0]}-W{iso[1]:02d}"
+        if self is Granularity.MONTHLY:
+            return dt.strftime("%Y-%m")
+        # YEARLY
+        return dt.strftime("%Y")
 
 
 @dataclass

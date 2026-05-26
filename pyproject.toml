@@ -12,15 +12,19 @@ classifiers = [
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
-    # Add more here...
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 
 # Core dependencies
 dependencies = [
     "click>=8.1",
     "rich>=13.0",
+    "rich-click>=1.7",
     "discord.py>=2.3",
     "matrix-nio>=0.24",
+    "polars>=1.0",
+    "tzdata>=2024.1",
 ]
 
 [project.scripts]
@@ -38,9 +42,9 @@ dev = [
 
 
 [project.urls]
-Homepage = "https://github.com/janbronicki/flatcar-socials-scripts"
-Repository = "https://github.com/janbronicki/flatcar-socials-scripts"
-Issues = "https://github.com/janbronicki/flatcar-socials-scripts/issues"
+Homepage = "https://github.com/John15321/flatcar-socials-scripts"
+Repository = "https://github.com/John15321/flatcar-socials-scripts"
+Issues = "https://github.com/John15321/flatcar-socials-scripts/issues"
 
 [build-system]
 requires = ["hatchling"]
