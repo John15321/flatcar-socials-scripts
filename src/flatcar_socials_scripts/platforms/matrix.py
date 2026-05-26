@@ -1,14 +1,14 @@
 """Matrix platform scraper.
 
 Connects to a Matrix homeserver via access token and collects statistics
-for a given room, such as member count, messages per month, etc.
+for a given room, such as member count, messages per time bucket, etc.
 """
 
 import logging
-from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
+import polars as pl
 from nio import (  # type: ignore[import-untyped]
     AsyncClient,
     JoinedMembersError,
@@ -19,7 +19,7 @@ from nio import (  # type: ignore[import-untyped]
     SyncError,
 )
 
-from ..timerange import TimeRange
+from ..timerange import Granularity, TimeRange
 from .base import PlatformScraper, PlatformStats, UserStats
 
 logger = logging.getLogger(__name__)
@@ -53,6 +53,7 @@ class MatrixScraper(PlatformScraper):
         room_id: str,
         time_range: TimeRange | None = None,
         collect_user_stats: bool = False,
+        granularity: Granularity = Granularity.MONTHLY,
     ) -> None:
         self.homeserver = homeserver
         self.token = token
@@ -62,6 +63,7 @@ class MatrixScraper(PlatformScraper):
             end=datetime.now(UTC),
         )
         self.collect_user_stats = collect_user_stats
+        self.granularity = granularity
         self._client = AsyncClient(homeserver)
         self._resolved_room_id: str = ""
         self._sync_token: str = ""
@@ -150,12 +152,12 @@ class MatrixScraper(PlatformScraper):
 
     async def _scan_messages(
         self,
-    ) -> tuple[Counter[str], dict[str, _MatrixUserAccumulator]]:
+    ) -> tuple[list[dict[str, object]], dict[str, _MatrixUserAccumulator]]:
         """Scan messages in the time range.
 
-        Returns monthly message counts and per-user accumulators.
+        Returns raw message records (for Polars) and per-user accumulators.
         """
-        monthly: Counter[str] = Counter()
+        records: list[dict[str, object]] = []
         users: dict[str, _MatrixUserAccumulator] = {}
 
         time_start_ms = int(self.time_range.start.timestamp() * 1000)
@@ -191,11 +193,17 @@ class MatrixScraper(PlatformScraper):
 
                 total_scanned += 1
                 dt = datetime.fromtimestamp(ts / 1000, tz=UTC)
-                key = dt.strftime("%Y-%m")
-                monthly[key] += 1
+                sender = event.sender
+
+                records.append(
+                    {
+                        "timestamp": dt,
+                        "user_id": sender,
+                        "is_bot": False,
+                    }
+                )
 
                 if self.collect_user_stats:
-                    sender = event.sender
                     if sender not in users:
                         users[sender] = _MatrixUserAccumulator(
                             user_id=sender,
@@ -213,7 +221,7 @@ class MatrixScraper(PlatformScraper):
         logger.debug("Scanned %d messages in time range", total_scanned)
         if self.collect_user_stats:
             logger.debug("Tracked %d unique users", len(users))
-        return monthly, users
+        return records, users
 
     def _build_user_stats(
         self,
@@ -257,7 +265,7 @@ class MatrixScraper(PlatformScraper):
                     ),
                     days_since_join=0,
                     days_to_first_message=None,
-                    channels_active_in=1,
+                    channels_active_in=1 if acc.message_count > 0 else 0,
                 )
             )
 
@@ -265,6 +273,8 @@ class MatrixScraper(PlatformScraper):
 
     async def scrape(self) -> PlatformStats:
         """Scrape Matrix room statistics."""
+        from ..analytics import compute_message_buckets, compute_message_distribution
+
         await self._ensure_connected()
 
         room_id = self._resolved_room_id
@@ -285,17 +295,31 @@ class MatrixScraper(PlatformScraper):
 
         # Get power levels
         power_levels = await self._get_power_levels()
-        admins = sum(1 for pl in power_levels.values() if pl >= 100)
-        moderators = sum(1 for pl in power_levels.values() if 50 <= pl < 100)
+        admins = sum(1 for lvl in power_levels.values() if lvl >= 100)
+        moderators = sum(1 for lvl in power_levels.values() if 50 <= lvl < 100)
 
         # Scan messages
-        messages_per_month, user_accumulators = await self._scan_messages()
+        message_records, user_accumulators = await self._scan_messages()
+
+        # Build Polars DataFrame from raw records
+        messages_df = (
+            pl.DataFrame(message_records)
+            if message_records
+            else pl.DataFrame(
+                schema={
+                    "timestamp": pl.Datetime("us", "UTC"),
+                    "user_id": pl.Utf8,
+                    "is_bot": pl.Boolean,
+                }
+            )
+        )
 
         active_users_in_range = len(user_accumulators) if self.collect_user_stats else 0
 
         stats: dict[str, str | int | float] = {
             "time_range_start": self.time_range.start.strftime("%Y-%m-%d"),
             "time_range_end": self.time_range.end.strftime("%Y-%m-%d"),
+            "granularity": self.granularity.value,
             "total_members": total_members,
             "admins": admins,
             "moderators": moderators,
@@ -303,14 +327,33 @@ class MatrixScraper(PlatformScraper):
             "room_topic": room_info.get("room_topic", ""),
         }
 
-        for month, count in sorted(messages_per_month.items()):
-            stats[f"messages_{month}"] = count
+        # Message buckets (configurable granularity)
+        msg_buckets = compute_message_buckets(messages_df, self.granularity)
+        for bucket, count in sorted(msg_buckets.items()):
+            stats[f"messages_{bucket}"] = count
 
-        total_messages = sum(messages_per_month.values())
+        total_messages = sum(msg_buckets.values())
         stats["total_messages"] = total_messages
 
         if self.collect_user_stats:
             stats["active_users_in_range"] = active_users_in_range
+
+            # Message distribution summary
+            member_rows = [
+                {
+                    "user_id": uid,
+                    "message_count": (
+                        user_accumulators[uid].message_count
+                        if uid in user_accumulators
+                        else 0
+                    ),
+                    "is_bot": False,
+                }
+                for uid, _ in members
+            ]
+            members_dist_df = pl.DataFrame(member_rows)
+            dist = compute_message_distribution(members_dist_df)
+            stats.update(dist)
 
         # Build per-user breakdown
         user_stats: list[UserStats] = []
@@ -325,6 +368,7 @@ class MatrixScraper(PlatformScraper):
             server_name=room_name,
             stats=stats,
             user_stats=user_stats,
+            messages_df=messages_df if self.collect_user_stats else None,
         )
 
     async def close(self) -> None:
