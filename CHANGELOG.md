@@ -1,3 +1,11 @@
+## [2.0.2](https://github.com/flatcar/flatcar-socials-scripts/compare/v2.0.1...v2.0.2) (2026-06-08)
+
+
+### Bug Fixes
+
+* update CODEOWNERS file description to reflect correct context ([06d2b37](https://github.com/flatcar/flatcar-socials-scripts/commit/06d2b371b32d9bf9c0b166a50ddc80be2e8ba0bc))
+* update URLs in documentation to reflect correct repository path ([b20df4f](https://github.com/flatcar/flatcar-socials-scripts/commit/b20df4fe6389862026c00b698ebc1e7d05358eff))
+
 ## [2.0.1](https://github.com/flatcar/flatcar-socials-scripts/compare/v2.0.0...v2.0.1) (2026-05-26)
 
 
