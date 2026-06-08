@@ -16,7 +16,7 @@
 
 # Flatcar Socials Scripts
 
-CLI tool to scrape statistics from Flatcar social platforms and export them to CSV.
+CLI tool to scrape statistics from Flatcar social platforms and export them to CSV. Although there is nothing Flatcar specific in the code, and this tool could work for anyone, on any server. It is being specifically developed for the Flatcar team.
 
 ## ✨ Features
 
@@ -34,17 +34,17 @@ We recommend using [pipx](https://pipx.pypa.io/) to install the CLI — it handl
 
 ```bash
 # Using pipx (recommended)
-pipx install git+https://github.com/John15321/flatcar-socials-scripts.git
+pipx install git+https://github.com/flatcar/flatcar-socials-scripts.git
 
 # Or from a specific GitHub release
-pipx install https://github.com/John15321/flatcar-socials-scripts/releases/download/v1.2.0/flatcar_socials_scripts-1.2.0-py3-none-any.whl
+pipx install https://github.com/flatcar/flatcar-socials-scripts/releases/download/v1.2.0/flatcar_socials_scripts-1.2.0-py3-none-any.whl
 ```
 
 <details>
 <summary>Alternative: install with pip</summary>
 
 ```bash
-pip install git+https://github.com/John15321/flatcar-socials-scripts.git
+pip install git+https://github.com/flatcar/flatcar-socials-scripts.git
 ```
 
 </details>
@@ -53,7 +53,7 @@ pip install git+https://github.com/John15321/flatcar-socials-scripts.git
 <summary>Development setup</summary>
 
 ```bash
-git clone https://github.com/John15321/flatcar-socials-scripts.git
+git clone https://github.com/flatcar/flatcar-socials-scripts.git
 cd flatcar-socials-scripts
 make setup
 ```
@@ -66,7 +66,7 @@ Copy-paste these commands and substitute your own values:
 
 ```bash
 # 1. Install
-pipx install git+https://github.com/John15321/flatcar-socials-scripts.git
+pipx install git+https://github.com/flatcar/flatcar-socials-scripts.git
 
 # 2. Set your credentials
 export DISCORD_BOT_TOKEN="your-bot-token-here"
@@ -135,7 +135,7 @@ flatcar-socials discord \
 
 ```bash
 # Install the tool
-pipx install git+https://github.com/John15321/flatcar-socials-scripts.git
+pipx install git+https://github.com/flatcar/flatcar-socials-scripts.git
 
 # See all available commands
 flatcar-socials --help
